@@ -1,0 +1,116 @@
+{
+  "best_model": "Gradient Boosting",
+  "best_accuracy": 0.9936,
+  "model_results": {
+    "Logistic Regression": {
+      "accuracy": 0.9911,
+      "precision": 0.9914,
+      "recall": 0.9909,
+      "f1_score": 0.9911,
+      "confusion_matrix": [
+        [
+          6940,
+          60
+        ],
+        [
+          64,
+          6936
+        ]
+      ]
+    },
+    "Random Forest": {
+      "accuracy": 0.9916,
+      "precision": 0.9924,
+      "recall": 0.9909,
+      "f1_score": 0.9916,
+      "confusion_matrix": [
+        [
+          6947,
+          53
+        ],
+        [
+          64,
+          6936
+        ]
+      ]
+    },
+    "Decision Tree": {
+      "accuracy": 0.9824,
+      "precision": 0.9819,
+      "recall": 0.9829,
+      "f1_score": 0.9824,
+      "confusion_matrix": [
+        [
+          6873,
+          127
+        ],
+        [
+          120,
+          6880
+        ]
+      ]
+    },
+    "Gradient Boosting": {
+      "accuracy": 0.9936,
+      "precision": 0.9939,
+      "recall": 0.9933,
+      "f1_score": 0.9936,
+      "confusion_matrix": [
+        [
+          6957,
+          43
+        ],
+        [
+          47,
+          6953
+        ]
+      ]
+    }
+  },
+  "feature_importance": {
+    "Age": 0.1495,
+    "Pain_Arms_Jaw_Back": 0.1308,
+    "Cold_Sweats_Nausea": 0.1155,
+    "Chest_Pain": 0.1024,
+    "Dizziness": 0.0965,
+    "Fatigue": 0.0939,
+    "Swelling": 0.0919,
+    "Palpitations": 0.0705,
+    "Shortness_of_Breath": 0.068,
+    "Sedentary_Lifestyle": 0.0121,
+    "Chronic_Stress": 0.0105,
+    "Obesity": 0.0095,
+    "High_Cholesterol": 0.0094,
+    "High_BP": 0.0092,
+    "Diabetes": 0.0087,
+    "Smoking": 0.0086,
+    "Family_History": 0.0085,
+    "Gender": 0.0046
+  },
+  "dataset_stats": {
+    "total": 70000,
+    "high_risk": 35000,
+    "low_risk": 35000,
+    "avg_age": 54.5,
+    "features": [
+      "Chest_Pain",
+      "Shortness_of_Breath",
+      "Fatigue",
+      "Palpitations",
+      "Dizziness",
+      "Swelling",
+      "Pain_Arms_Jaw_Back",
+      "Cold_Sweats_Nausea",
+      "High_BP",
+      "High_Cholesterol",
+      "Diabetes",
+      "Smoking",
+      "Obesity",
+      "Sedentary_Lifestyle",
+      "Family_History",
+      "Chronic_Stress",
+      "Gender",
+      "Age"
+    ]
+  }
+}

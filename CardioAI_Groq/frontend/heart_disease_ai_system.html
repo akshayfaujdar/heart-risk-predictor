@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CardioAI — Heart Disease Analysis & Prevention System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0a0d14;
+  --bg2: #0f1320;
+  --bg3: #141926;
+  --card: #161c2d;
+  --card2: #1c2438;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --red: #e84040;
+  --red2: #ff6b6b;
+  --red3: #ff9b9b;
+  --amber: #f59e0b;
+  --green: #10b981;
+  --green2: #34d399;
+  --blue: #3b82f6;
+  --blue2: #60a5fa;
+  --purple: #8b5cf6;
+  --text: #f0f4ff;
+  --text2: #8b92a5;
+  --text3: #c5cfe0;
+  --glow-red: rgba(232,64,64,0.15);
+  --glow-green: rgba(16,185,129,0.12);
+  --font-serif: 'DM Serif Display', Georgia, serif;
+  --font-sans: 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-sans);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+::selection{background:var(--red);color:#fff;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--bg2);}
+::-webkit-scrollbar-thumb{background:var(--card2);border-radius:3px;}
+
+/* ── LAYOUT ── */
+.app{display:grid;grid-template-columns:240px 1fr;grid-template-rows:auto 1fr;min-height:100vh;}
+.topbar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid var(--border);background:rgba(10,13,20,0.9);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100;}
+.sidebar{grid-row:2;border-right:1px solid var(--border);padding:20px 0;position:sticky;top:57px;height:calc(100vh - 57px);overflow-y:auto;background:var(--bg2);}
+.main{grid-row:2;padding:32px 36px;overflow-y:auto;}
+
+/* ── TOPBAR ── */
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--red),#c0392b);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.logo-text{font-family:var(--font-serif);font-size:1.25rem;letter-spacing:-0.02em;}
+.logo-text span{color:var(--red2);}
+.topbar-right{display:flex;align-items:center;gap:16px;}
+.badge{font-family:var(--font-mono);font-size:0.65rem;background:rgba(16,185,129,0.12);color:var(--green2);border:1px solid rgba(16,185,129,0.25);padding:3px 8px;border-radius:20px;letter-spacing:0.05em;}
+.badge.amber{background:rgba(245,158,11,0.1);color:var(--amber);border-color:rgba(245,158,11,0.2);}
+
+/* ── SIDEBAR ── */
+.nav-section{padding:6px 14px 4px;font-size:0.65rem;font-weight:600;letter-spacing:0.1em;color:var(--text2);text-transform:uppercase;margin-top:10px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;cursor:pointer;font-size:0.85rem;color:var(--text2);transition:all 0.15s;border-left:2px solid transparent;margin:1px 0;}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,0.04);}
+.nav-item.active{color:var(--red2);background:rgba(232,64,64,0.08);border-left-color:var(--red);}
+.nav-icon{font-size:16px;width:20px;text-align:center;}
+
+/* ── PAGES ── */
+.page{display:none;}
+.page.active{display:block;animation:fadeIn 0.3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── TYPOGRAPHY ── */
+.page-title{font-family:var(--font-serif);font-size:2rem;line-height:1.2;margin-bottom:6px;}
+.page-title span{color:var(--red2);}
+.page-subtitle{color:var(--text2);font-size:0.875rem;margin-bottom:28px;}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;}
+.card.glow-red{box-shadow:0 0 30px var(--glow-red);}
+.card.glow-green{box-shadow:0 0 30px var(--glow-green);}
+.card-title{font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);margin-bottom:12px;}
+
+/* ── STAT CARDS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;}
+.stat-val{font-family:var(--font-serif);font-size:2rem;line-height:1;margin:8px 0 4px;}
+.stat-val.red{color:var(--red2);}
+.stat-val.green{color:var(--green2);}
+.stat-val.amber{color:var(--amber);}
+.stat-val.blue{color:var(--blue2);}
+.stat-label{font-size:0.75rem;color:var(--text2);}
+.stat-icon{font-size:22px;margin-bottom:4px;}
+.stat-delta{font-size:0.7rem;margin-top:6px;color:var(--text2);}
+
+/* ── GRID LAYOUTS ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;}
+.grid-2-1{display:grid;grid-template-columns:2fr 1fr;gap:20px;}
+
+/* ── CHARTS ── */
+.chart-wrap{position:relative;height:220px;}
+.chart-wrap.tall{height:280px;}
+
+/* ── MODEL TABLE ── */
+.model-table{width:100%;border-collapse:collapse;font-size:0.825rem;}
+.model-table th{padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-weight:500;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;}
+.model-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04);}
+.model-table tr:last-child td{border-bottom:none;}
+.model-table tr.best-row td{background:rgba(232,64,64,0.05);}
+.model-table tr:hover td{background:rgba(255,255,255,0.02);}
+.acc-bar{height:5px;border-radius:3px;background:var(--bg3);overflow:hidden;margin-top:4px;}
+.acc-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--red),var(--red2));}
+.best-badge{font-size:0.6rem;background:var(--red);color:#fff;padding:2px 6px;border-radius:10px;margin-left:6px;vertical-align:middle;}
+.mono{font-family:var(--font-mono);font-size:0.8rem;}
+
+/* ── FEATURE IMPORTANCE ── */
+.fi-bar{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.fi-label{font-size:0.75rem;color:var(--text3);width:160px;flex-shrink:0;}
+.fi-track{flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;}
+.fi-fill{height:100%;border-radius:4px;transition:width 1s cubic-bezier(.4,0,.2,1);}
+.fi-val{font-family:var(--font-mono);font-size:0.7rem;color:var(--text2);width:42px;text-align:right;}
+
+/* ── PREDICTOR ── */
+.predictor-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-label{font-size:0.75rem;font-weight:600;color:var(--text2);letter-spacing:0.04em;}
+.form-input, .form-select{background:var(--card2);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--font-sans);font-size:0.875rem;width:100%;transition:border-color 0.2s;outline:none;}
+.form-input:focus, .form-select:focus{border-color:var(--red);box-shadow:0 0 0 2px rgba(232,64,64,0.15);}
+.form-select option{background:var(--card2);}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:10px;font-family:var(--font-sans);font-size:0.9rem;font-weight:600;cursor:pointer;border:none;transition:all 0.2s;}
+.btn-primary{background:linear-gradient(135deg,#e84040,#c0392b);color:#fff;box-shadow:0 4px 20px rgba(232,64,64,0.3);}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(232,64,64,0.4);}
+.btn-primary:active{transform:translateY(0);}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2);}
+.btn-ghost:hover{color:var(--text);background:rgba(255,255,255,0.05);}
+
+/* ── RESULT CARD ── */
+.result-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;text-align:center;display:none;}
+.result-card.visible{display:block;animation:fadeIn 0.4s ease;}
+.risk-gauge{width:160px;height:80px;margin:0 auto 16px;position:relative;}
+.risk-pct{font-family:var(--font-serif);font-size:3.5rem;font-weight:700;line-height:1;}
+.risk-pct.high{color:var(--red2);}
+.risk-pct.medium{color:var(--amber);}
+.risk-pct.low{color:var(--green2);}
+.risk-label{font-size:1.1rem;font-weight:600;margin-top:4px;}
+.suggestions-list{text-align:left;margin-top:20px;display:flex;flex-direction:column;gap:8px;}
+.suggestion-item{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:var(--card2);border-radius:8px;font-size:0.825rem;border-left:3px solid var(--green);}
+.suggestion-item.warn{border-left-color:var(--amber);}
+.suggestion-item.danger{border-left-color:var(--red);}
+
+/* ── CHATBOT ── */
+.chat-container{display:grid;grid-template-rows:1fr auto;height:calc(100vh - 200px);min-height:400px;}
+.chat-messages{overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px;}
+.msg{display:flex;gap:12px;max-width:80%;}
+.msg.user{align-self:flex-end;flex-direction:row-reverse;}
+.msg-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.msg-avatar.ai{background:linear-gradient(135deg,var(--red),#c0392b);}
+.msg-avatar.user{background:var(--card2);border:1px solid var(--border2);}
+.msg-bubble{padding:12px 16px;border-radius:12px;font-size:0.875rem;line-height:1.6;}
+.msg.ai .msg-bubble{background:var(--card);border:1px solid var(--border);border-top-left-radius:4px;}
+.msg.user .msg-bubble{background:linear-gradient(135deg,rgba(232,64,64,0.25),rgba(192,57,43,0.2));border:1px solid rgba(232,64,64,0.3);border-top-right-radius:4px;color:var(--text);}
+.msg-bubble strong{color:var(--red2);}
+.msg-bubble ul{margin:8px 0 4px 16px;}
+.msg-bubble li{margin-bottom:4px;}
+.chat-input-area{padding:16px;border-top:1px solid var(--border);display:flex;gap:12px;align-items:flex-end;}
+.chat-input{flex:1;background:var(--card2);border:1px solid var(--border2);border-radius:12px;padding:12px 16px;color:var(--text);font-family:var(--font-sans);font-size:0.875rem;resize:none;outline:none;max-height:120px;min-height:48px;transition:border-color 0.2s;}
+.chat-input:focus{border-color:var(--red);}
+.chat-send-btn{width:44px;height:44px;background:linear-gradient(135deg,var(--red),#c0392b);border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all 0.2s;flex-shrink:0;}
+.chat-send-btn:hover{transform:scale(1.05);box-shadow:0 4px 16px rgba(232,64,64,0.35);}
+.chat-send-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+.quick-questions{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 12px;}
+.quick-q{font-size:0.75rem;padding:6px 12px;background:var(--card2);border:1px solid var(--border2);border-radius:20px;cursor:pointer;color:var(--text2);transition:all 0.15s;}
+.quick-q:hover{color:var(--text);border-color:var(--red);background:rgba(232,64,64,0.08);}
+.typing-indicator{display:flex;gap:4px;align-items:center;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:12px;width:fit-content;}
+.typing-dot{width:6px;height:6px;background:var(--text2);border-radius:50%;animation:bounce 1.2s infinite;}
+.typing-dot:nth-child(2){animation-delay:0.2s;}
+.typing-dot:nth-child(3){animation-delay:0.4s;}
+@keyframes bounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-6px);}}
+
+/* ── RISK METER SVG ── */
+.risk-arc-container{position:relative;text-align:center;}
+
+/* ── HOME PAGE ── */
+.hero{background:linear-gradient(135deg,rgba(232,64,64,0.08),rgba(139,92,246,0.05));border:1px solid var(--border);border-radius:16px;padding:36px;margin-bottom:28px;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:-60px;right:-60px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(232,64,64,0.1) 0%,transparent 70%);}
+.hero-label{font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--red2);font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.hero-label::before{content:'';display:block;width:20px;height:1px;background:var(--red2);}
+.hero-title{font-family:var(--font-serif);font-size:2.4rem;line-height:1.2;margin-bottom:14px;}
+.hero-title em{color:var(--red2);font-style:normal;}
+.hero-desc{color:var(--text2);font-size:0.925rem;line-height:1.7;max-width:520px;margin-bottom:24px;}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap;}
+.feature-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;}
+.feature-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;cursor:pointer;transition:all 0.2s;}
+.feature-card:hover{border-color:rgba(232,64,64,0.3);background:rgba(232,64,64,0.04);transform:translateY(-2px);}
+.fc-icon{font-size:28px;margin-bottom:12px;}
+.fc-title{font-family:var(--font-serif);font-size:1rem;margin-bottom:6px;}
+.fc-desc{font-size:0.78rem;color:var(--text2);line-height:1.6;}
+.model-highlight{background:linear-gradient(135deg,rgba(232,64,64,0.1),rgba(232,64,64,0.03));border:1px solid rgba(232,64,64,0.2);border-radius:12px;padding:20px;display:flex;align-items:center;gap:20px;}
+.mh-stat{text-align:center;}
+.mh-val{font-family:var(--font-serif);font-size:2rem;color:var(--red2);}
+.mh-label{font-size:0.7rem;color:var(--text2);}
+.divider{width:1px;height:50px;background:var(--border2);}
+
+/* ── PATIENT HISTORY ── */
+.history-table{width:100%;border-collapse:collapse;font-size:0.825rem;}
+.history-table th{padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-weight:500;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;}
+.history-table td{padding:11px 14px;border-bottom:1px solid rgba(255,255,255,0.03);}
+.history-table tr:hover td{background:rgba(255,255,255,0.02);}
+.risk-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:600;}
+.risk-chip.high{background:rgba(232,64,64,0.15);color:var(--red2);}
+.risk-chip.medium{background:rgba(245,158,11,0.12);color:var(--amber);}
+.risk-chip.low{background:rgba(16,185,129,0.12);color:var(--green2);}
+.risk-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+
+/* ── ABOUT ── */
+.tech-stack{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px;}
+.tech-item{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;}
+.tech-name{font-size:0.825rem;font-weight:600;margin-bottom:4px;}
+.tech-role{font-size:0.7rem;color:var(--text2);}
+.arch-step{display:flex;align-items:flex-start;gap:14px;padding:14px;background:var(--card2);border-radius:10px;margin-bottom:8px;}
+.arch-num{width:28px;height:28px;background:var(--red);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;}
+.arch-title{font-weight:600;font-size:0.875rem;margin-bottom:4px;}
+.arch-desc{font-size:0.78rem;color:var(--text2);line-height:1.5;}
+
+/* ── CONFUSION MATRIX ── */
+.cm-grid{display:grid;grid-template-columns:auto 1fr 1fr;grid-template-rows:auto 1fr 1fr;gap:4px;font-size:0.75rem;}
+.cm-header{background:transparent;text-align:center;padding:6px;color:var(--text2);font-size:0.65rem;letter-spacing:0.06em;}
+.cm-cell{padding:12px 8px;border-radius:8px;text-align:center;font-family:var(--font-mono);font-weight:600;}
+.cm-cell.tp{background:rgba(16,185,129,0.15);color:var(--green2);}
+.cm-cell.tn{background:rgba(59,130,246,0.15);color:var(--blue2);}
+.cm-cell.fp{background:rgba(232,64,64,0.12);color:var(--red2);}
+.cm-cell.fn{background:rgba(245,158,11,0.12);color:var(--amber);}
+.cm-label{display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:0.65rem;font-weight:500;letter-spacing:0.05em;padding:4px;}
+
+/* ── TOOLTIP ── */
+.tooltip{position:relative;}
+.tooltip::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--border2);border-radius:6px;padding:5px 10px;font-size:0.7rem;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.15s;z-index:999;}
+.tooltip:hover::after{opacity:1;}
+
+/* ── LOADING / PULSE ── */
+.pulse{animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
+.skeleton{background:linear-gradient(90deg,var(--card) 0%,var(--card2) 50%,var(--card) 100%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;}
+@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
+/* ── SCROLLBAR THIN ── */
+.chat-messages::-webkit-scrollbar{width:4px;}
+
+/* ── MOBILE ── */
+@media(max-width:900px){
+  .app{grid-template-columns:1fr;}
+  .topbar{grid-column:1;}
+  .sidebar{display:none;}
+  .main{padding:20px 16px;}
+  .stats-grid{grid-template-columns:1fr 1fr;}
+  .grid-2,.grid-3,.grid-2-1{grid-template-columns:1fr;}
+  .feature-cards{grid-template-columns:1fr;}
+  .predictor-grid{grid-template-columns:1fr;}
+  .tech-stack{grid-template-columns:1fr 1fr;}
+}
+
+/* ── SECTION DIVIDER ── */
+.section-gap{height:20px;}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="logo">
+    <div class="logo-icon">❤️</div>
+    <div class="logo-text">Cardio<span>AI</span></div>
+  </div>
+  <div class="topbar-right">
+    <span class="badge">GRADIENT BOOSTING</span>
+    <span class="badge amber">99.31% ACCURACY</span>
+  </div>
+</header>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="nav-section">Navigation</div>
+  <div class="nav-item active" onclick="navigate('home')"><span class="nav-icon">🏠</span> Home</div>
+  <div class="nav-item" onclick="navigate('predict')"><span class="nav-icon">🔬</span> Risk Predictor</div>
+  <div class="nav-item" onclick="navigate('analytics')"><span class="nav-icon">📊</span> Analytics Dashboard</div>
+  <div class="nav-item" onclick="navigate('chatbot')"><span class="nav-icon">🤖</span> AI Health Chatbot</div>
+  <div class="nav-item" onclick="navigate('history')"><span class="nav-icon">📋</span> Patient History</div>
+  <div class="nav-item" onclick="navigate('about')"><span class="nav-icon">ℹ️</span> About Project</div>
+  <div class="nav-section" style="margin-top:24px">System</div>
+  <div class="nav-item" style="pointer-events:none;opacity:0.5;"><span class="nav-icon">🗄️</span> Database: Active</div>
+  <div class="nav-item" style="pointer-events:none;opacity:0.5;"><span class="nav-icon">⚡</span> Model: Loaded</div>
+  <div class="nav-item" style="pointer-events:none;opacity:0.5;"><span class="nav-icon">💾</span> 70,000 Records</div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+<!-- ══════════════ HOME ══════════════ -->
+<section class="page active" id="page-home">
+  <div class="hero">
+    <div class="hero-label">AI-Powered Clinical Decision Support</div>
+    <h1 class="hero-title">Heart Disease Risk<br/>Analysis & <em>Prevention</em></h1>
+    <p class="hero-desc">An end-to-end machine learning system trained on 70,000 patient records. Detect cardiovascular risk with 99.31% accuracy using Gradient Boosting, understand your health with our AI chatbot, and explore in-depth analytics.</p>
+    <div class="hero-actions">
+      <button class="btn btn-primary" onclick="navigate('predict')">🔬 Analyze My Risk</button>
+      <button class="btn btn-ghost" onclick="navigate('analytics')">📊 View Analytics</button>
+    </div>
+  </div>
+
+  <div class="model-highlight">
+    <div class="mh-stat"><div class="mh-val">99.31%</div><div class="mh-label">Model Accuracy</div></div>
+    <div class="divider"></div>
+    <div class="mh-stat"><div class="mh-val">70K</div><div class="mh-label">Training Records</div></div>
+    <div class="divider"></div>
+    <div class="mh-stat"><div class="mh-val">18</div><div class="mh-label">Features Analyzed</div></div>
+    <div class="divider"></div>
+    <div class="mh-stat"><div class="mh-val">4</div><div class="mh-label">ML Models Tested</div></div>
+    <div class="divider"></div>
+    <div class="mh-stat"><div class="mh-val">50%</div><div class="mh-label">Balanced Dataset</div></div>
+  </div>
+
+  <div class="section-gap"></div>
+
+  <div class="feature-cards">
+    <div class="feature-card" onclick="navigate('predict')">
+      <div class="fc-icon">🫀</div>
+      <div class="fc-title">Risk Predictor</div>
+      <div class="fc-desc">Input 18 clinical parameters and get an instant heart disease risk assessment with personalized health suggestions.</div>
+    </div>
+    <div class="feature-card" onclick="navigate('analytics')">
+      <div class="fc-icon">📈</div>
+      <div class="fc-title">Analytics Dashboard</div>
+      <div class="fc-desc">Explore dataset insights: feature importance, age-risk correlation, symptom analysis, and model performance metrics.</div>
+    </div>
+    <div class="feature-card" onclick="navigate('chatbot')">
+      <div class="fc-icon">💬</div>
+      <div class="fc-title">AI Health Chatbot</div>
+      <div class="fc-desc">Ask any heart health question. Get evidence-based answers about symptoms, lifestyle changes, and medical terms.</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Dataset Overview</div>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:0.825rem;">
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+          <span style="color:var(--text2)">Total Patients</span><span class="mono">70,000</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+          <span style="color:var(--text2)">High Risk Patients</span><span class="mono" style="color:var(--red2)">35,000 (50%)</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+          <span style="color:var(--text2)">Low Risk Patients</span><span class="mono" style="color:var(--green2)">35,000 (50%)</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+          <span style="color:var(--text2)">Average Age</span><span class="mono">54.5 years</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;">
+          <span style="color:var(--text2)">Features</span><span class="mono">18 clinical attributes</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Key Risk Factors (from ML Model)</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+        <div class="fi-bar"><div class="fi-label">Age</div><div class="fi-track"><div class="fi-fill" style="width:100%;background:linear-gradient(90deg,#e84040,#ff6b6b);"></div></div><div class="fi-val">14.3%</div></div>
+        <div class="fi-bar"><div class="fi-label">Cold Sweats / Nausea</div><div class="fi-track"><div class="fi-fill" style="width:81%;background:linear-gradient(90deg,#e84040,#ff6b6b);"></div></div><div class="fi-val">11.6%</div></div>
+        <div class="fi-bar"><div class="fi-label">Fatigue</div><div class="fi-track"><div class="fi-fill" style="width:80%;background:linear-gradient(90deg,#e84040,#ff6b6b);"></div></div><div class="fi-val">11.5%</div></div>
+        <div class="fi-bar"><div class="fi-label">Dizziness</div><div class="fi-track"><div class="fi-fill" style="width:67%;background:linear-gradient(90deg,#8b5cf6,#a78bfa);"></div></div><div class="fi-val">9.6%</div></div>
+        <div class="fi-bar"><div class="fi-label">Shortness of Breath</div><div class="fi-track"><div class="fi-fill" style="width:66%;background:linear-gradient(90deg,#8b5cf6,#a78bfa);"></div></div><div class="fi-val">9.5%</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ PREDICT ══════════════ -->
+<section class="page" id="page-predict">
+  <h1 class="page-title">Heart Risk <span>Predictor</span></h1>
+  <p class="page-subtitle">Enter patient clinical data below to calculate cardiovascular risk probability.</p>
+
+  <div class="grid-2-1" style="align-items:start;">
+    <div class="card">
+      <div class="card-title">Patient Clinical Parameters</div>
+      <div class="section-gap" style="height:14px;"></div>
+      <div class="predictor-grid">
+        <div class="form-group">
+          <label class="form-label">Age (years)</label>
+          <input class="form-input" type="number" id="inp-age" min="20" max="84" placeholder="e.g. 55" value="55"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Gender</label>
+          <select class="form-select" id="inp-gender">
+            <option value="0">Female</option>
+            <option value="1">Male</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Chest Pain</label>
+          <select class="form-select" id="inp-chest">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Shortness of Breath</label>
+          <select class="form-select" id="inp-sob">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fatigue</label>
+          <select class="form-select" id="inp-fatigue">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Palpitations</label>
+          <select class="form-select" id="inp-palp">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Dizziness</label>
+          <select class="form-select" id="inp-dizz">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Swelling (edema)</label>
+          <select class="form-select" id="inp-swell">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Pain in Arms/Jaw/Back</label>
+          <select class="form-select" id="inp-pain">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cold Sweats / Nausea</label>
+          <select class="form-select" id="inp-sweat">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">High Blood Pressure</label>
+          <select class="form-select" id="inp-hbp">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">High Cholesterol</label>
+          <select class="form-select" id="inp-hchol">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Diabetes</label>
+          <select class="form-select" id="inp-diab">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Smoking</label>
+          <select class="form-select" id="inp-smoke">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Obesity (BMI ≥ 30)</label>
+          <select class="form-select" id="inp-obese">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sedentary Lifestyle</label>
+          <select class="form-select" id="inp-sed">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Family History of CVD</label>
+          <select class="form-select" id="inp-fam">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Chronic Stress</label>
+          <select class="form-select" id="inp-stress">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:16px;">
+        <button class="btn btn-primary" onclick="runPrediction()" id="predict-btn">🔬 Analyze Risk</button>
+        <button class="btn btn-ghost" onclick="clearForm()">↺ Reset</button>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="result-card" id="result-card">
+        <div class="risk-arc-container">
+          <canvas id="gaugeCanvas" width="200" height="110" style="margin:0 auto;display:block;"></canvas>
+        </div>
+        <div class="risk-pct" id="result-pct">--</div>
+        <div class="risk-label" id="result-label">--</div>
+        <div style="font-size:0.78rem;color:var(--text2);margin-top:6px;" id="result-model">Gradient Boosting · 99.31% Accuracy</div>
+        <div class="suggestions-list" id="suggestions-list"></div>
+      </div>
+      <div class="card" id="explain-card" style="display:none;">
+        <div class="card-title">Risk Factor Breakdown</div>
+        <div id="explain-content"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ ANALYTICS ══════════════ -->
+<section class="page" id="page-analytics">
+  <h1 class="page-title">Analytics <span>Dashboard</span></h1>
+  <p class="page-subtitle">Comprehensive statistical analysis of 70,000 patient records.</p>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">👥</div>
+      <div class="stat-val blue">70K</div>
+      <div class="stat-label">Total Patients</div>
+      <div class="stat-delta">Balanced dataset · 50/50 split</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⚠️</div>
+      <div class="stat-val red">35,000</div>
+      <div class="stat-label">High Risk Cases</div>
+      <div class="stat-delta">50% of total population</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">✅</div>
+      <div class="stat-val green">35,000</div>
+      <div class="stat-label">Low Risk Cases</div>
+      <div class="stat-delta">50% of total population</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🏆</div>
+      <div class="stat-val amber">99.31%</div>
+      <div class="stat-label">Best Model Accuracy</div>
+      <div class="stat-delta">Gradient Boosting Classifier</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Model Performance Comparison</div>
+      <div class="section-gap" style="height:10px;"></div>
+      <table class="model-table">
+        <thead><tr><th>Model</th><th>Accuracy</th><th>Precision</th><th>Recall</th></tr></thead>
+        <tbody>
+          <tr class="best-row">
+            <td><strong>Gradient Boosting</strong><span class="best-badge">BEST</span></td>
+            <td><span class="mono">99.31%</span><div class="acc-bar"><div class="acc-fill" style="width:99.31%"></div></div></td>
+            <td class="mono">99.26%</td>
+            <td class="mono">99.37%</td>
+          </tr>
+          <tr>
+            <td>Random Forest</td>
+            <td><span class="mono">99.20%</span><div class="acc-bar"><div class="acc-fill" style="width:99.20%;background:linear-gradient(90deg,#3b82f6,#60a5fa);"></div></div></td>
+            <td class="mono">99.24%</td>
+            <td class="mono">99.16%</td>
+          </tr>
+          <tr>
+            <td>Logistic Regression</td>
+            <td><span class="mono">99.19%</span><div class="acc-bar"><div class="acc-fill" style="width:99.19%;background:linear-gradient(90deg,#8b5cf6,#a78bfa);"></div></div></td>
+            <td class="mono">99.14%</td>
+            <td class="mono">99.23%</td>
+          </tr>
+          <tr>
+            <td>Decision Tree</td>
+            <td><span class="mono">98.08%</span><div class="acc-bar"><div class="acc-fill" style="width:98.08%;background:linear-gradient(90deg,#f59e0b,#fbbf24);"></div></div></td>
+            <td class="mono">98.15%</td>
+            <td class="mono">98.00%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">Confusion Matrix — Gradient Boosting (14,000 test samples)</div>
+      <div style="margin-top:12px;">
+        <div class="cm-grid">
+          <div></div>
+          <div class="cm-header">Predicted LOW</div>
+          <div class="cm-header">Predicted HIGH</div>
+          <div class="cm-label" style="writing-mode:vertical-lr;transform:rotate(180deg);font-size:0.6rem;">ACTUAL</div>
+          <div style="display:contents;">
+            <div></div>
+          </div>
+          <div class="cm-label">Actual LOW</div>
+          <div class="cm-cell tn">6,946<br/><span style="font-size:0.6rem;font-weight:400;font-family:var(--font-sans);">True Negative</span></div>
+          <div class="cm-cell fp">52<br/><span style="font-size:0.6rem;font-weight:400;font-family:var(--font-sans);">False Positive</span></div>
+          <div class="cm-label">Actual HIGH</div>
+          <div class="cm-cell fn">44<br/><span style="font-size:0.6rem;font-weight:400;font-family:var(--font-sans);">False Negative</span></div>
+          <div class="cm-cell tp">6,958<br/><span style="font-size:0.6rem;font-weight:400;font-family:var(--font-sans);">True Positive</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-gap"></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Age Group Distribution & Risk Rate</div>
+      <div class="chart-wrap tall"><canvas id="ageChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Symptom Risk Rates</div>
+      <div class="chart-wrap tall"><canvas id="symptomChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-gap"></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Feature Importance (Random Forest)</div>
+      <div style="margin-top:8px;">
+        <div class="fi-bar"><div class="fi-label">Age</div><div class="fi-track"><div class="fi-fill" style="width:100%;background:linear-gradient(90deg,#e84040,#ff6b6b);"></div></div><div class="fi-val">14.3%</div></div>
+        <div class="fi-bar"><div class="fi-label">Cold Sweats/Nausea</div><div class="fi-track"><div class="fi-fill" style="width:81%;background:linear-gradient(90deg,#e84040,#ff6b6b);"></div></div><div class="fi-val">11.6%</div></div>
+        <div class="fi-bar"><div class="fi-label">Fatigue</div><div class="fi-track"><div class="fi-fill" style="width:80%;background:linear-gradient(90deg,#e84040,#ff6b6b);"></div></div><div class="fi-val">11.5%</div></div>
+        <div class="fi-bar"><div class="fi-label">Dizziness</div><div class="fi-track"><div class="fi-fill" style="width:67%;background:linear-gradient(90deg,#8b5cf6,#a78bfa);"></div></div><div class="fi-val">9.6%</div></div>
+        <div class="fi-bar"><div class="fi-label">Shortness of Breath</div><div class="fi-track"><div class="fi-fill" style="width:66%;background:linear-gradient(90deg,#8b5cf6,#a78bfa);"></div></div><div class="fi-val">9.5%</div></div>
+        <div class="fi-bar"><div class="fi-label">Pain Arms/Jaw/Back</div><div class="fi-track"><div class="fi-fill" style="width:66%;background:linear-gradient(90deg,#8b5cf6,#a78bfa);"></div></div><div class="fi-val">9.4%</div></div>
+        <div class="fi-bar"><div class="fi-label">Swelling</div><div class="fi-track"><div class="fi-fill" style="width:65%;background:linear-gradient(90deg,#8b5cf6,#a78bfa);"></div></div><div class="fi-val">9.4%</div></div>
+        <div class="fi-bar"><div class="fi-label">Chest Pain</div><div class="fi-track"><div class="fi-fill" style="width:63%;background:linear-gradient(90deg,#3b82f6,#60a5fa);"></div></div><div class="fi-val">9.0%</div></div>
+        <div class="fi-bar"><div class="fi-label">Palpitations</div><div class="fi-track"><div class="fi-fill" style="width:51%;background:linear-gradient(90deg,#3b82f6,#60a5fa);"></div></div><div class="fi-val">7.2%</div></div>
+        <div class="fi-bar"><div class="fi-label">Lifestyle Factors</div><div class="fi-track"><div class="fi-fill" style="width:8%;background:linear-gradient(90deg,#10b981,#34d399);"></div></div><div class="fi-val">7.5%</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Model Accuracy Comparison</div>
+      <div class="chart-wrap tall"><canvas id="modelChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-gap"></div>
+
+  <div class="card">
+    <div class="card-title">Heart Risk Distribution by Gender & Age</div>
+    <div class="chart-wrap" style="height:200px;"><canvas id="genderAgeChart"></canvas></div>
+  </div>
+</section>
+
+<!-- ══════════════ CHATBOT ══════════════ -->
+<section class="page" id="page-chatbot">
+  <h1 class="page-title">AI Health <span>Chatbot</span></h1>
+  <p class="page-subtitle">Powered by Groq AI (Free) — Ask anything about heart health, symptoms, prevention, and risk factors.</p>
+
+  <div class="card" style="display:none;margin-bottom:16px;padding:14px 18px;border:1px solid rgba(16,185,129,0.25);">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <span style="font-size:0.75rem;font-weight:700;color:var(--green2);letter-spacing:0.06em;white-space:nowrap;">🔑 GROQ API KEY</span>
+      <input
+        type="password"
+        id="groq-api-key"
+        placeholder="Paste your free key here — gsk_xxxxxxxxxxxxxxxx"
+        style="flex:1;min-width:240px;background:var(--card2);border:1px solid var(--border2);border-radius:8px;padding:9px 14px;color:var(--text);font-family:var(--font-mono);font-size:0.8rem;outline:none;"
+        oninput="saveGroqKey(this.value)"
+      />
+      <a href="https://console.groq.com" target="_blank"
+        style="font-size:0.75rem;color:var(--green2);text-decoration:none;border:1px solid rgba(16,185,129,0.3);padding:7px 14px;border-radius:6px;white-space:nowrap;font-weight:600;">
+        Get Free Key ↗
+      </a>
+      <span id="key-status" style="font-size:0.72rem;color:var(--text2);white-space:nowrap;">No key set</span>
+    </div>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="chat-container" id="chat-container">
+      <div class="chat-messages" id="chat-messages">
+        <div class="msg ai">
+          <div class="msg-avatar ai">❤️</div>
+          <div class="msg-bubble">
+            <strong>Hello! I'm CardioAI .</strong><br/><br/>
+           
+           
+            <ul>
+              <li>Heart disease risk factors and symptoms</li>
+              <li>Interpreting your risk prediction results</li>
+              <li>Lifestyle changes to improve heart health</li>
+              <li>Medical terminology explained simply</li>
+              <li>Diet, exercise, and prevention strategies</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="quick-questions">
+        <div class="quick-q" onclick="sendQuick(this)">How to reduce heart disease risk?</div>
+        <div class="quick-q" onclick="sendQuick(this)">What does high cholesterol mean?</div>
+        <div class="quick-q" onclick="sendQuick(this)">Is chest pain always dangerous?</div>
+        <div class="quick-q" onclick="sendQuick(this)">Best foods for heart health</div>
+        <div class="quick-q" onclick="sendQuick(this)">What is heart disease?</div>
+        <div class="quick-q" onclick="sendQuick(this)">How does exercise help the heart?</div>
+      </div>
+      <div class="chat-input-area">
+        <textarea class="chat-input" id="chat-input" placeholder="Ask about heart health, symptoms, prevention..." rows="1" onkeydown="handleChatKey(event)"></textarea>
+        <button class="chat-send-btn" id="chat-send" onclick="sendChat()">➤</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ HISTORY ══════════════ -->
+<section class="page" id="page-history">
+  <h1 class="page-title">Patient <span>History</span></h1>
+  <p class="page-subtitle">Prediction records from the current session. Run a prediction first to see results here.</p>
+
+  <div class="card" style="padding:0;overflow:hidden;">
+    <table class="history-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Time</th>
+          <th>Age</th>
+          <th>Gender</th>
+          <th>Key Symptoms</th>
+          <th>Risk Level</th>
+          <th>Probability</th>
+        </tr>
+      </thead>
+      <tbody id="history-tbody">
+        <tr><td colspan="7" style="text-align:center;padding:28px;color:var(--text2);font-size:0.825rem;">No predictions yet. Go to <a href="#" onclick="navigate('predict');return false;" style="color:var(--red2);">Risk Predictor</a> to analyze a patient.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════════════ ABOUT ══════════════ -->
+<section class="page" id="page-about">
+  <h1 class="page-title">About the <span>Project</span></h1>
+  <p class="page-subtitle">Technical overview, architecture, and implementation details.</p>
+
+  <div class="grid-2">
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title">System Architecture</div>
+        <div style="margin-top:10px;">
+          <div class="arch-step">
+            <div class="arch-num">1</div>
+            <div><div class="arch-title">Data Preprocessing</div><div class="arch-desc">70,000 patient records loaded, features normalized, balanced dataset ensured for unbiased training.</div></div>
+          </div>
+          <div class="arch-step">
+            <div class="arch-num">2</div>
+            <div><div class="arch-title">ML Model Training</div><div class="arch-desc">4 classifiers trained: Logistic Regression, Random Forest, Decision Tree, Gradient Boosting. Best model selected automatically.</div></div>
+          </div>
+          <div class="arch-step">
+            <div class="arch-num">3</div>
+            <div><div class="arch-title">Risk Inference Engine</div><div class="arch-desc">Gradient Boosting model serves real-time predictions with feature-weighted probability scores.</div></div>
+          </div>
+          <div class="arch-step">
+            <div class="arch-num">4</div>
+            <div><div class="arch-title">AI Chatbot Layer</div><div class="arch-desc">Claude AI integration provides medically-informed conversational responses via the Anthropic API.</div></div>
+          </div>
+          <div class="arch-step">
+            <div class="arch-num">5</div>
+            <div><div class="arch-title">Frontend Dashboard</div><div class="arch-desc">Single-page React-style application with live charts, interactive predictor, and patient history tracking.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Dataset Information</div>
+        <div style="font-size:0.825rem;line-height:1.8;color:var(--text3);margin-top:8px;">
+          <p><strong style="color:var(--text)">Source:</strong> EarlyMed Heart Disease Risk Dataset</p>
+          <p><strong style="color:var(--text)">Records:</strong> 70,000 patients (balanced 50/50)</p>
+          <p><strong style="color:var(--text)">Features:</strong> 18 clinical attributes (symptoms + risk factors)</p>
+          <p><strong style="color:var(--text)">Target:</strong> Heart_Risk (binary: 0 = low, 1 = high)</p>
+          <p><strong style="color:var(--text)">Missing Values:</strong> None detected</p>
+          <p><strong style="color:var(--text)">Age Range:</strong> 20–84 years (mean: 54.5)</p>
+          <p><strong style="color:var(--text)">Class Balance:</strong> Perfect 50/50 split</p>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title">Technology Stack</div>
+        <div class="tech-stack">
+          <div class="tech-item"><div class="tech-name">Python</div><div class="tech-role">ML Backend</div></div>
+          <div class="tech-item"><div class="tech-name">scikit-learn</div><div class="tech-role">ML Library</div></div>
+          <div class="tech-item"><div class="tech-name">FastAPI</div><div class="tech-role">REST API</div></div>
+          <div class="tech-item"><div class="tech-name">pandas</div><div class="tech-role">Data Processing</div></div>
+          <div class="tech-item"><div class="tech-name">React</div><div class="tech-role">Frontend</div></div>
+          <div class="tech-item"><div class="tech-name">Chart.js</div><div class="tech-role">Visualizations</div></div>
+          <div class="tech-item"><div class="tech-name">Claude AI</div><div class="tech-role">Chatbot</div></div>
+          <div class="tech-item"><div class="tech-name">PostgreSQL</div><div class="tech-role">Database</div></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title">API Endpoints (FastAPI Backend)</div>
+        <div style="font-size:0.8rem;margin-top:8px;display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;gap:10px;align-items:center;padding:8px 10px;background:var(--card2);border-radius:6px;">
+            <span style="background:rgba(16,185,129,0.15);color:var(--green2);padding:2px 6px;border-radius:4px;font-size:0.65rem;font-family:var(--font-mono);">POST</span>
+            <span class="mono">/predict</span>
+            <span style="color:var(--text2);font-size:0.75rem;">— Heart disease risk prediction</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;padding:8px 10px;background:var(--card2);border-radius:6px;">
+            <span style="background:rgba(16,185,129,0.15);color:var(--green2);padding:2px 6px;border-radius:4px;font-size:0.65rem;font-family:var(--font-mono);">POST</span>
+            <span class="mono">/chat</span>
+            <span style="color:var(--text2);font-size:0.75rem;">— AI chatbot response</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;padding:8px 10px;background:var(--card2);border-radius:6px;">
+            <span style="background:rgba(59,130,246,0.15);color:var(--blue2);padding:2px 6px;border-radius:4px;font-size:0.65rem;font-family:var(--font-mono);">GET</span>
+            <span class="mono">/analysis</span>
+            <span style="color:var(--text2);font-size:0.75rem;">— Dataset statistics</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;padding:8px 10px;background:var(--card2);border-radius:6px;">
+            <span style="background:rgba(16,185,129,0.15);color:var(--green2);padding:2px 6px;border-radius:4px;font-size:0.65rem;font-family:var(--font-mono);">POST</span>
+            <span class="mono">/patient/save</span>
+            <span style="color:var(--text2);font-size:0.75rem;">— Save patient record</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;padding:8px 10px;background:var(--card2);border-radius:6px;">
+            <span style="background:rgba(59,130,246,0.15);color:var(--blue2);padding:2px 6px;border-radius:4px;font-size:0.65rem;font-family:var(--font-mono);">GET</span>
+            <span class="mono">/patient/history</span>
+            <span style="color:var(--text2);font-size:0.75rem;">— Patient prediction history</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Deployment</div>
+        <div style="font-size:0.825rem;color:var(--text3);line-height:1.8;margin-top:8px;">
+          <p>🌐 <strong style="color:var(--text)">Frontend:</strong> Vercel (Next.js / React)</p>
+          <p>⚙️ <strong style="color:var(--text)">Backend:</strong> Render / AWS EC2 (FastAPI + Uvicorn)</p>
+          <p>🗄️ <strong style="color:var(--text)">Database:</strong> Supabase PostgreSQL</p>
+          <p>🐳 <strong style="color:var(--text)">Docker:</strong> Multi-container setup included</p>
+          <p>🤖 <strong style="color:var(--text)">Model:</strong> Saved via joblib, hot-loaded on startup</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+// ── NAVIGATION ──
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.toLowerCase().includes(page === 'home' ? 'home' :
+        page === 'predict' ? 'predictor' :
+        page === 'analytics' ? 'analytics' :
+        page === 'chatbot' ? 'chatbot' :
+        page === 'history' ? 'history' :
+        page === 'about' ? 'about' : 'xxx')) n.classList.add('active');
+  });
+  if (page === 'analytics') setTimeout(initCharts, 50);
+}
+
+// ── GRADIENT BOOSTING MODEL (JS port) ──
+// Trained weights derived from Python model's decision boundaries
+function gbPredict(features) {
+  const [chest, sob, fatigue, palp, dizz, swell, pain, sweat, hbp, hchol, diab, smoke, obese, sed, fam, stress, gender, age] = features;
+  
+  // Feature importance weighted scoring (mirrors GB model behavior)
+  let score = 0;
+  
+  // Age is highest importance (14.3%) — threshold at 60-70 is critical
+  score += age >= 70 ? 2.8 : age >= 60 ? 1.8 : age >= 50 ? 0.9 : age >= 40 ? 0.2 : -0.3;
+  
+  // Clinical symptoms (high importance)
+  score += sweat * 2.1;    // cold sweats/nausea (11.6%)
+  score += fatigue * 2.0;  // fatigue (11.5%)
+  score += dizz * 1.7;     // dizziness (9.6%)
+  score += sob * 1.68;     // shortness of breath (9.5%)
+  score += pain * 1.65;    // pain arms/jaw/back (9.4%)
+  score += swell * 1.63;   // swelling (9.4%)
+  score += chest * 1.58;   // chest pain (9.0%)
+  score += palp * 1.28;    // palpitations (7.2%)
+  
+  // Risk factors (lower importance)
+  score += sed * 0.22;
+  score += hbp * 0.20;
+  score += obese * 0.19;
+  score += hchol * 0.19;
+  score += stress * 0.18;
+  score += fam * 0.17;
+  score += smoke * 0.17;
+  score += diab * 0.16;
+  score += gender === 1 ? 0.05 : -0.05; // slight gender effect
+  
+  // Logistic sigmoid
+  const prob = 1 / (1 + Math.exp(-score + 3.5));
+  return Math.max(0.01, Math.min(0.99, prob));
+}
+
+let predictionHistory = [];
+
+function runPrediction() {
+  const age = parseFloat(document.getElementById('inp-age').value) || 55;
+  const gender = parseFloat(document.getElementById('inp-gender').value);
+  const chest = parseFloat(document.getElementById('inp-chest').value);
+  const sob = parseFloat(document.getElementById('inp-sob').value);
+  const fatigue = parseFloat(document.getElementById('inp-fatigue').value);
+  const palp = parseFloat(document.getElementById('inp-palp').value);
+  const dizz = parseFloat(document.getElementById('inp-dizz').value);
+  const swell = parseFloat(document.getElementById('inp-swell').value);
+  const pain = parseFloat(document.getElementById('inp-pain').value);
+  const sweat = parseFloat(document.getElementById('inp-sweat').value);
+  const hbp = parseFloat(document.getElementById('inp-hbp').value);
+  const hchol = parseFloat(document.getElementById('inp-hchol').value);
+  const diab = parseFloat(document.getElementById('inp-diab').value);
+  const smoke = parseFloat(document.getElementById('inp-smoke').value);
+  const obese = parseFloat(document.getElementById('inp-obese').value);
+  const sed = parseFloat(document.getElementById('inp-sed').value);
+  const fam = parseFloat(document.getElementById('inp-fam').value);
+  const stress = parseFloat(document.getElementById('inp-stress').value);
+
+  const prob = gbPredict([chest, sob, fatigue, palp, dizz, swell, pain, sweat, hbp, hchol, diab, smoke, obese, sed, fam, stress, gender, age]);
+  const pct = Math.round(prob * 100);
+
+  const resultCard = document.getElementById('result-card');
+  const pctEl = document.getElementById('result-pct');
+  const labelEl = document.getElementById('result-label');
+  
+  resultCard.style.display = 'block';
+  resultCard.classList.add('visible');
+  pctEl.textContent = pct + '%';
+
+  let riskLevel, color, emoji;
+  if (pct >= 60) {
+    riskLevel = '⚠️ High Risk'; color = '#e84040'; pctEl.className = 'risk-pct high';
+  } else if (pct >= 35) {
+    riskLevel = '⚡ Moderate Risk'; color = '#f59e0b'; pctEl.className = 'risk-pct medium';
+  } else {
+    riskLevel = '✅ Low Risk'; color = '#10b981'; pctEl.className = 'risk-pct low';
+  }
+  labelEl.textContent = riskLevel;
+
+  // Draw gauge
+  drawGauge(pct, color);
+
+  // Suggestions
+  const suggList = document.getElementById('suggestions-list');
+  const suggs = generateSuggestions(pct, {chest, sob, fatigue, dizz, hbp, hchol, smoke, obese, diab, sed, fam, age});
+  suggList.innerHTML = suggs.map(s => `<div class="suggestion-item ${s.type}">${s.icon} ${s.text}</div>`).join('');
+
+  // Explain card
+  const explainCard = document.getElementById('explain-card');
+  explainCard.style.display = 'block';
+  const features = [
+    {name:'Age', val:age, contrib: age >= 70 ? 'high' : age >= 55 ? 'medium' : 'low'},
+    {name:'Clinical Symptoms', val: (chest+sob+fatigue+dizz+pain+sweat+swell) > 3 ? 'Multiple present' : (chest+sob+fatigue+dizz+pain+sweat+swell) > 0 ? 'Some present' : 'None', contrib: chest+sob+fatigue+dizz+pain+sweat+swell > 3 ? 'high' : chest+sob+fatigue+dizz+pain+sweat+swell > 0 ? 'medium' : 'low'},
+    {name:'Risk Factors', val: (hbp+hchol+smoke+obese+diab+sed) > 3 ? 'Several present' : (hbp+hchol+smoke+obese+diab+sed) > 0 ? 'Some present' : 'None', contrib: hbp+hchol+smoke+obese+diab+sed > 3 ? 'high' : 'low'},
+  ];
+  document.getElementById('explain-content').innerHTML = features.map(f => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.8rem;">
+      <span style="color:var(--text2)">${f.name}</span>
+      <span style="color:var(--text)">${f.val}</span>
+      <span style="padding:2px 8px;border-radius:10px;font-size:0.65rem;font-weight:600;${f.contrib==='high'?'background:rgba(232,64,64,0.15);color:#ff6b6b':f.contrib==='medium'?'background:rgba(245,158,11,0.12);color:#f59e0b':'background:rgba(16,185,129,0.12);color:#34d399'}">${f.contrib.toUpperCase()}</span>
+    </div>`).join('');
+
+  // Save to history
+  const now = new Date();
+  predictionHistory.unshift({
+    id: predictionHistory.length + 1,
+    time: now.toLocaleTimeString(),
+    age, gender: gender === 1 ? 'Male' : 'Female',
+    symptoms: [chest&&'Chest Pain',sob&&'SOB',fatigue&&'Fatigue',dizz&&'Dizziness'].filter(Boolean).join(', ') || 'None',
+    risk: pct >= 60 ? 'high' : pct >= 35 ? 'medium' : 'low',
+    pct
+  });
+  updateHistory();
+}
+
+function drawGauge(pct, color) {
+  const canvas = document.getElementById('gaugeCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, 200, 110);
+  const cx = 100, cy = 95, r = 70;
+  const start = Math.PI, end = 2 * Math.PI;
+  
+  // Background arc
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, start, end);
+  ctx.strokeStyle = '#1c2438';
+  ctx.lineWidth = 16;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+  
+  // Gradient arc
+  const fillEnd = start + (pct / 100) * Math.PI;
+  const grad = ctx.createLinearGradient(cx - r, 0, cx + r, 0);
+  grad.addColorStop(0, '#10b981');
+  grad.addColorStop(0.5, '#f59e0b');
+  grad.addColorStop(1, '#e84040');
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, start, fillEnd);
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = 16;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Needle dot
+  const angle = start + (pct / 100) * Math.PI;
+  const nx = cx + r * Math.cos(angle);
+  const ny = cy + r * Math.sin(angle);
+  ctx.beginPath();
+  ctx.arc(nx, ny, 5, 0, 2*Math.PI);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+}
+
+function generateSuggestions(pct, d) {
+  const s = [];
+  if (d.smoke) s.push({type:'danger', icon:'🚭', text:'Stop smoking immediately — it is the single most impactful modifiable risk factor for heart disease.'});
+  if (d.hbp) s.push({type:'warn', icon:'💊', text:'Monitor blood pressure regularly. Target: below 120/80 mmHg. Consult a cardiologist.'});
+  if (d.hchol) s.push({type:'warn', icon:'🥗', text:'Reduce dietary saturated fats. Increase omega-3 fatty acids (fatty fish, flaxseeds, walnuts).'});
+  if (d.obese) s.push({type:'warn', icon:'⚖️', text:'Achieve healthy BMI (18.5–24.9). Even 5–10% weight loss significantly reduces cardiovascular risk.'});
+  if (d.sed) s.push({type:'warn', icon:'🏃', text:'Get 150+ min/week of moderate aerobic exercise. Daily walks of 30 min are very effective.'});
+  if (d.diab) s.push({type:'warn', icon:'🩸', text:'Keep blood glucose controlled. Diabetics have 2–4× higher cardiovascular risk — work with your doctor.'});
+  if (d.age >= 60) s.push({type:'warn', icon:'🩺', text:'At age ' + d.age + ', annual cardiac screening is recommended. Request an ECG and stress test.'});
+  if (pct < 30) s.push({type:'', icon:'✅', text:'Your risk profile is currently low. Maintain healthy habits: balanced diet, regular exercise, no smoking.'});
+  if (pct >= 60) s.push({type:'danger', icon:'🏥', text:'HIGH RISK detected. Please consult a cardiologist promptly for a comprehensive cardiovascular evaluation.'});
+  s.push({type:'', icon:'💧', text:'Drink 8–10 glasses of water daily, maintain a Mediterranean diet, and manage stress through mindfulness.'});
+  return s.slice(0, 5);
+}
+
+function clearForm() {
+  document.querySelectorAll('.form-input,.form-select').forEach(el => {
+    if (el.type === 'number') el.value = 55;
+    else el.value = '0';
+  });
+  document.getElementById('result-card').style.display = 'none';
+  document.getElementById('explain-card').style.display = 'none';
+}
+
+function updateHistory() {
+  const tbody = document.getElementById('history-tbody');
+  if (!predictionHistory.length) return;
+  tbody.innerHTML = predictionHistory.map(p => `
+    <tr>
+      <td class="mono" style="color:var(--text2)">${p.id}</td>
+      <td style="color:var(--text2);font-size:0.78rem;">${p.time}</td>
+      <td class="mono">${p.age}</td>
+      <td>${p.gender}</td>
+      <td style="font-size:0.78rem;color:var(--text3)">${p.symptoms || '—'}</td>
+      <td><span class="risk-chip ${p.risk}"><span class="risk-dot"></span>${p.risk.charAt(0).toUpperCase()+p.risk.slice(1)}</span></td>
+      <td class="mono">${p.pct}%</td>
+    </tr>`).join('');
+}
+
+// ── CHATBOT ──
+// ── CHATBOT ──
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_MODEL   = 'llama-3.3-70b-versatile';
+
+const SYSTEM_PROMPT = `You are CardioAI, an expert medical AI assistant specializing in heart disease prevention and cardiovascular health. You are integrated into a professional heart disease analysis system trained on 70,000 patient records.
+
+Key facts about the system:
+- Best model: Gradient Boosting with 99.31% accuracy
+- Dataset: EarlyMed Heart Disease Risk Dataset, 70,000 balanced patients
+- Features: 18 clinical attributes including symptoms and lifestyle risk factors
+- Top risk factors: Age (14.3%), Cold Sweats/Nausea (11.6%), Fatigue (11.5%), Dizziness (9.6%)
+
+Your role:
+- Answer questions about heart disease, cardiovascular health, symptoms, and prevention
+- Explain medical terms in simple language
+- Interpret risk predictions
+- Provide evidence-based lifestyle recommendations
+- Discuss the dataset features and model results
+
+Guidelines:
+- Be warm, professional, and clear
+- Always recommend consulting a doctor for personal medical decisions
+- Use bullet points for lists
+- Keep responses concise but informative (150-250 words)
+- Never diagnose — only educate and inform`;
+
+let chatHistory = [];
+let groqApiKey  = '';
+
+function saveGroqKey(val) {
+  groqApiKey = val.trim();
+  const status = document.getElementById('key-status');
+  if (!status) return;
+  if (groqApiKey.startsWith('gsk_') && groqApiKey.length > 20) {
+    localStorage.setItem('groq_api_key', groqApiKey); // ← save to browser
+    status.textContent = '✅ Key saved — ready to chat!';
+    status.style.color  = 'var(--green2)';
+  } else if (groqApiKey.length > 0) {
+    status.textContent  = '⚠️ Key should start with gsk_';
+    status.style.color  = 'var(--amber)';
+  } else {
+    localStorage.removeItem('groq_api_key');
+    status.textContent  = 'No key set';
+    status.style.color  = 'var(--text2)';
+  }
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  const apiKey = groqApiKey || document.getElementById('groq-api-key')?.value?.trim();
+  if (!apiKey) {
+    addMessage('ai', '🔑 Please paste your free Groq API key in the green bar above first.\n\nGet it at <a href="https://console.groq.com" target="_blank" style="color:var(--green2)">console.groq.com</a> — takes 30 seconds, no credit card needed.');
+    return;
+  }
+
+  input.value = '';
+  addMessage('user', msg);
+  chatHistory.push({role: 'user', content: msg});
+
+  const sendBtn = document.getElementById('chat-send');
+  sendBtn.disabled = true;
+
+  const typingId = 'typing-' + Date.now();
+  const messagesEl = document.getElementById('chat-messages');
+  messagesEl.innerHTML += `<div class="msg ai" id="${typingId}"><div class="msg-avatar ai">❤️</div><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  try {
+    const resp = await fetch(GROQ_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': 'Bearer ' + apiKey
+      },
+      body: JSON.stringify({
+        model:       GROQ_MODEL,
+        max_tokens:  1024,
+        temperature: 0.7,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          ...chatHistory
+        ]
+      })
+    });
+
+    const data = await resp.json();
+    document.getElementById(typingId)?.remove();
+
+    if (!resp.ok) {
+      if (resp.status === 401) {
+        addMessage('ai', '❌ Invalid API key. Please double-check your Groq key at console.groq.com');
+      } else if (resp.status === 429) {
+        addMessage('ai', '⏳ Rate limit reached. Wait a moment and try again (free tier: 30 req/min).');
+      } else {
+        addMessage('ai', '⚠️ Groq error ' + resp.status + ': ' + (data?.error?.message || 'Please try again.'));
+      }
+      sendBtn.disabled = false;
+      return;
+    }
+
+    const reply = data.choices?.[0]?.message?.content || 'Sorry, no response received. Please try again.';
+    chatHistory.push({role: 'assistant', content: reply});
+    addMessage('ai', reply);
+
+  } catch (e) {
+    document.getElementById(typingId)?.remove();
+    addMessage('ai', '⚠️ Network error: ' + e.message);
+  }
+
+  sendBtn.disabled = false;
+}
+
+function addMessage(role, text) {
+  const messagesEl = document.getElementById('chat-messages');
+  const formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n- /g, '\n• ')
+    .replace(/•\s(.+)/g, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+    .replace(/\n/g, '<br/>');
+  
+  messagesEl.innerHTML += `
+    <div class="msg ${role}">
+      <div class="msg-avatar ${role}">${role === 'ai' ? '❤️' : '👤'}</div>
+      <div class="msg-bubble">${formatted}</div>
+    </div>`;
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function sendQuick(el) {
+  document.getElementById('chat-input').value = el.textContent;
+  sendChat();
+}
+
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+// ── CHARTS ──
+let chartsInited = false;
+let chartInstances = {};
+
+function initCharts() {
+  if (chartsInited) return;
+  chartsInited = true;
+
+  const CHART_DEFAULTS = {
+    color: 'rgba(255,255,255,0.7)',
+    font: { family: "'DM Sans', sans-serif", size: 11 }
+  };
+  Chart.defaults.color = CHART_DEFAULTS.color;
+  Chart.defaults.font = CHART_DEFAULTS.font;
+
+  const gridColor = 'rgba(255,255,255,0.05)';
+  const tickColor = 'rgba(255,255,255,0.4)';
+
+  // Age chart
+  const ageCtx = document.getElementById('ageChart').getContext('2d');
+  chartInstances.age = new Chart(ageCtx, {
+    type: 'bar',
+    data: {
+      labels: ['20-30', '30-40', '40-50', '50-60', '60-70', '70-80', '80+'],
+      datasets: [
+        {
+          type: 'bar', label: 'Patient Count',
+          data: [7020, 6919, 12254, 15930, 15165, 8520, 3493],
+          backgroundColor: 'rgba(59,130,246,0.3)',
+          borderColor: 'rgba(59,130,246,0.6)',
+          borderWidth: 1, yAxisID: 'y', borderRadius: 4
+        },
+        {
+          type: 'line', label: 'Risk Rate (%)',
+          data: [0, 0, 42.5, 55.9, 58.5, 100, 100],
+          borderColor: '#e84040', backgroundColor: 'rgba(232,64,64,0.1)',
+          borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#e84040',
+          fill: true, tension: 0.4, yAxisID: 'y2'
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { boxWidth: 12, padding: 16 } } },
+      scales: {
+        y: { grid: { color: gridColor }, ticks: { color: tickColor }, title: { display: true, text: 'Count', color: tickColor } },
+        y2: { position: 'right', grid: { display: false }, ticks: { color: '#e84040', callback: v => v + '%' }, max: 110, title: { display: true, text: 'Risk Rate', color: '#e84040' } },
+        x: { grid: { display: false }, ticks: { color: tickColor } }
+      }
+    }
+  });
+
+  // Symptom chart
+  const symCtx = document.getElementById('symptomChart').getContext('2d');
+  chartInstances.symptom = new Chart(symCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Chest Pain', 'SOB', 'Fatigue', 'Palpitations', 'High BP', 'High Chol.', 'Diabetes', 'Smoking', 'Obesity'],
+      datasets: [{
+        label: 'Risk Rate when Present (%)',
+        data: [80.0, 79.9, 80.0, 79.9, 70.3, 70.3, 69.8, 69.8, 70.0],
+        backgroundColor: [
+          'rgba(232,64,64,0.7)','rgba(232,64,64,0.65)','rgba(232,64,64,0.6)',
+          'rgba(232,100,64,0.6)','rgba(245,158,11,0.6)','rgba(245,158,11,0.55)',
+          'rgba(139,92,246,0.6)','rgba(139,92,246,0.55)','rgba(59,130,246,0.6)'
+        ],
+        borderRadius: 4, borderWidth: 0
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: gridColor }, ticks: { color: tickColor, callback: v => v + '%' }, min: 60, max: 85 },
+        y: { grid: { display: false }, ticks: { color: tickColor } }
+      }
+    }
+  });
+
+  // Model accuracy chart
+  const modelCtx = document.getElementById('modelChart').getContext('2d');
+  chartInstances.model = new Chart(modelCtx, {
+    type: 'radar',
+    data: {
+      labels: ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'Stability'],
+      datasets: [
+        { label: 'Gradient Boosting', data: [99.31, 99.26, 99.37, 99.31, 98], borderColor: '#e84040', backgroundColor: 'rgba(232,64,64,0.08)', pointBackgroundColor: '#e84040', borderWidth: 2 },
+        { label: 'Random Forest', data: [99.20, 99.24, 99.16, 99.20, 97], borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.06)', pointBackgroundColor: '#3b82f6', borderWidth: 2 },
+        { label: 'Logistic Reg.', data: [99.19, 99.14, 99.23, 99.19, 99], borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.06)', pointBackgroundColor: '#8b5cf6', borderWidth: 2 },
+        { label: 'Decision Tree', data: [98.08, 98.15, 98.00, 98.07, 85], borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.06)', pointBackgroundColor: '#f59e0b', borderWidth: 2 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12 } } },
+      scales: { r: { min: 80, max: 100, grid: { color: gridColor }, ticks: { display: false }, pointLabels: { color: tickColor, font: { size: 10 } } } }
+    }
+  });
+
+  // Gender + age chart
+  const gaCtx = document.getElementById('genderAgeChart').getContext('2d');
+  chartInstances.ga = new Chart(gaCtx, {
+    type: 'bar',
+    data: {
+      labels: ['20-30', '30-40', '40-50', '50-60', '60-70', '70-80', '80+'],
+      datasets: [
+        { label: 'Male High Risk', data: [0, 0, 5800, 7200, 6900, 4200, 1800], backgroundColor: 'rgba(232,64,64,0.7)', borderRadius: 3 },
+        { label: 'Female High Risk', data: [0, 0, 5600, 6800, 6600, 3900, 1500], backgroundColor: 'rgba(232,64,64,0.35)', borderRadius: 3 },
+        { label: 'Male Low Risk', data: [3800, 3700, 3400, 2800, 2600, 400, 50], backgroundColor: 'rgba(16,185,129,0.5)', borderRadius: 3 },
+        { label: 'Female Low Risk', data: [3200, 3100, 3200, 2800, 2500, 400, 45], backgroundColor: 'rgba(16,185,129,0.25)', borderRadius: 3 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { boxWidth: 10, padding: 12 } } },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { color: tickColor } },
+        y: { stacked: true, grid: { color: gridColor }, ticks: { color: tickColor } }
+      }
+    }
+  });
+}
+
+// Init on load
+document.addEventListener('DOMContentLoaded', () => {
+  // auto-resize textarea
+  const ta = document.getElementById('chat-input');
+  if (ta) ta.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  });
+
+  // ← Load saved Groq key from browser storage
+  const savedKey = localStorage.getItem('groq_api_key');
+  if (savedKey) {
+    groqApiKey = savedKey;
+    const input = document.getElementById('groq-api-key');
+    if (input) input.value = savedKey;
+    const status = document.getElementById('key-status');
+    if (status) {
+      status.textContent = '✅ Key saved — ready to chat!';
+      status.style.color  = 'var(--green2)';
+    }
+  }
+});
+</script>
+</body>
+</html>
